@@ -3,11 +3,12 @@ import './App.scss';
 
 import usersFromServer from './api/users';
 import todosFromServer from './api/todos';
+import { TodoList } from './components/TodoList';
 
 export type User = {
   id: number;
   name: string;
-  userName: string;
+  username: string;
   email: string;
 };
 
@@ -16,37 +17,45 @@ export type Todo = {
   title: string;
   completed: boolean;
   userId: number;
-  user: User;
+  user: User | undefined;
 };
 
 export const App = () => {
   const [title, setTitle] = useState('Enter a title');
-  const [hasTitleError, setHasTitleError] = useState(true);
+  //const [titleError, setTitleError] = useState(false);
+
   const [userId, setUserId] = useState(0);
-  const [hasUserError, setHasUserError] = useState(true);
+  //const [userError, setUserError] = useState(false);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(event.target.value);
-    setHasTitleError(false);
+    //setTitleError(false);
   };
 
   const handleUserIdChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setUserId(+event.target.value);
-    setHasUserError(false);
+    //setUserError(false);
   };
 
-  function resetFields() {
+  /*function resetFields() {
     setTitle('Enter a title');
     setUserId(0);
-  }
+  }*/
 
   const hasAdd = (event: React.FormEvent) => {
-    resetFields();
+    event.preventDefault();
+
+    //setTitleError(!title);
+    //setUserError(!userId);
+
+    if (!title || !userId) {
+      return;
+    }
   };
 
-  const handleUserId = todosFromServer.map(todo => ({
+  const todosWithUser: Todo[] = todosFromServer.map(todo => ({
     ...todo,
-    user: usersFromServer.find(user => user.id === todo.userId),
+    user: usersFromServer.find((user: User) => user.id === todo.userId),
   }));
 
   return (
@@ -70,9 +79,11 @@ export const App = () => {
             value={userId}
             onChange={handleUserIdChange}
           >
-            <option value="0" disabled>
-              Choose a user
-            </option>
+            {usersFromServer.map(user => (
+              <option value={user.id} key={user.id}>
+                {user.name}
+              </option>
+            ))}
           </select>
 
           <span className="error">Please choose a user</span>
@@ -82,6 +93,8 @@ export const App = () => {
           Add
         </button>
       </form>
+
+      <TodoList todos={todosWithUser} />
     </div>
   );
 };
