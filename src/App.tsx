@@ -22,62 +22,48 @@ export type Todo = {
 
 export const App = () => {
   const [title, setTitle] = useState('');
-  const [titleError, setTitleError] = useState('');
-
+  const [error, setError] = useState(false);
   const [userId, setUserId] = useState(0);
-  const [userError, setUserError] = useState('');
-
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(event.target.value);
-
-    if (titleError && event.target.value.trim()) {
-      setTitleError('');
-    }
-  };
-
-  const handleUserIdChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedtUserId = +event.target.value;
-
-    setUserId(selectedtUserId);
-
-    if (userError && selectedtUserId !== 0) {
-      setUserError('');
-    }
-  };
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    let isValid = true;
-
-    // Validação do input
-    if (!title.trim()) {
-      setTitleError('Please enter a title');
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      isValid = false;
-    } else {
-      setTitleError('');
-    }
-
-    // Validação do usuário
-    if (userId === 0) {
-      setUserError('Please choose a user');
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      isValid = false;
-    } else {
-      setUserError('');
-    }
-
-    if (isValid) {
-      // Resetar os campos após o envio (opcional)
-      setTitle('');
-      setUserId(0);
-    }
-  };
 
   const todosWithUser: Todo[] = todosFromServer.map(todo => ({
     ...todo,
     user: usersFromServer.find((user: User) => user.id === todo.userId),
   }));
+
+  const [postList, setPostList] = useState<Todo[]>([...todosWithUser]);
+
+  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(event.target.value);
+  };
+
+  const handleUserIdChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setUserId(+event.target.value);
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!title.trim() || userId === 0) {
+      setError(true);
+
+      return;
+    }
+
+    setPostList([
+      ...postList,
+      {
+        id: postList[postList.length - 1].id + 1,
+        title,
+        completed: false,
+        userId,
+        user: usersFromServer.find(user => userId === user.id),
+      },
+    ]);
+
+    setTitle('');
+    setUserId(0);
+    setError(false);
+  };
 
   return (
     <div className="App">
@@ -92,7 +78,9 @@ export const App = () => {
             value={title}
             onChange={handleTitleChange}
           />
-          {titleError && <span className="error">Please enter a title</span>}
+          {error && !title.trim() && (
+            <span className="error">Please chose a user</span>
+          )}
         </div>
 
         <div className="field">
@@ -108,7 +96,9 @@ export const App = () => {
             ))}
           </select>
 
-          {userError && <span className="error">Please choose a user</span>}
+          {error && userId === 0 && (
+            <span className="error">Please chose a user</span>
+          )}
         </div>
 
         <button type="submit" data-cy="submitButton">
@@ -116,7 +106,7 @@ export const App = () => {
         </button>
       </form>
 
-      <TodoList todos={todosWithUser} />
+      <TodoList todos={postList} />
     </div>
   );
 };
